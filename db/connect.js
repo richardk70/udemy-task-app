@@ -4,10 +4,9 @@ const mongodb = require('mongodb');
 // const ObjectID = mongodb.ObjectID;
 const { MongoClient, ObjectID } = require('mongodb');
 
-const URL = process.env.MONGO_CONNECT;
 const dbName = 'Todo';
 
-MongoClient.connect(URL, {useNewUrlParser: true}, (error, client) => {
+MongoClient.connect(process.env.MONGO_CONNECT, {useNewUrlParser: true}, (error, client) => {
     const db = client.db(dbName);
 
     if (error)
