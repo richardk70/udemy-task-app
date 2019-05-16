@@ -11,6 +11,7 @@ const { sendWelcomeEmail, sendCancelEmail } = require('../emails/account');
 // REGISTER (CREATE)
 router.post('/users', async (req, res) => {
     const user = new User(req.body);
+    console.log(user);
     try {
         // await user.save();
         const token = await user.generateAuthToken();

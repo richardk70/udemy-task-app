@@ -1,13 +1,14 @@
 // routes/tasks.js
 
 const express = require('express');
+const multer = require('multer'); // for file uploads
+const sharp = require('sharp'); // for handling image files
 const Task = require('./../models/task');
 const auth = require('../middleware/auth');
 const router = new express.Router();
 
 // CREATE
 router.post('/tasks', auth, async function(req, res) {
-    // const task = new Task(req.body);
     const task = new Task({
         description: req.body.description,
         complete: req.body.complete,
@@ -108,5 +109,67 @@ router.patch('/tasks/:id', auth, async function(req, res) {
         res.status(500).send(e);
     }
 });
+
+// add photo to task
+const upload = multer({
+    limits: {
+        fileSize: 2000000,  // <-- limit to 2 MB
+    },
+    fileFilter(req, file, callback) {
+        let temp = file.originalname.toLowerCase();
+        if (!temp.match(/\.(jpg|jpeg|png)$/)) {
+            return callback(new Error('File must be an image file.'));
+        }
+        if (file.fileSize > 2000000)
+            return callback(new Error('File must be under 2 MB in size.'));
+
+        callback(undefined, true); // passed
+    }
+});
+
+router.post('/tasks/photo/:id', auth, upload.single('photo'), async function(req, res) {
+    const buffer = await sharp(req.file.buffer)
+        .resize({ width: 100, height: 100 })
+        .png()
+        .toBuffer();
+    var _id = req.params.id;
+    try {
+        let task = await Task.findOne({ _id, owner: req.user._id });
+        task.photo = buffer;
+        console.log(task);
+        await task.save();
+        res.send();
+    } catch (e) {
+
+    }
+}, (error, req, res, next) => {
+    res.status(400).send({ error:error.message })
+});
+
+router.get('/tasks/photo/:id', async function(req, res) {
+    try {
+        let task = await Task.findById(req.params.id);
+        if (!task)
+            throw new Error();
+        res.set('Content-Type', 'image/png');
+        res.send(task.photo);
+    } catch (e) {
+        res.status(500).send(e);
+    }
+});
+
+// delete photo from task
+router.delete('/tasks/photo/:id', async function(req, res) {
+    try {
+        let task = await Task.findById(req.params.id);
+        if (!task)
+            throw new Error();
+        task.photo = undefined;
+        await task.save();
+        res.send(task);
+    } catch (e) {
+        res.status(404).send(e);
+    }
+})
 
 module.exports = router;

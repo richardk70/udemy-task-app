@@ -24,15 +24,6 @@ const userSchema = new mongoose.Schema({
             }
         }
     },
-    age: {
-        type: Number,
-        validate(value) {
-            if (value < 0) {
-                throw new Error('Age must be a positive number.');
-            }
-        },
-        required: false,
-    },
     tokens: [{
         token: {
             type: String,
@@ -46,10 +37,6 @@ const userSchema = new mongoose.Schema({
         type: String,
         trim: true,
         minlength: 6,
-        validate(value) {
-            if (value.toLowerCase() === 'password')
-                throw new Error('Password cannot be "password".');
-        },
         required: true,
     }
 }, {
@@ -99,7 +86,6 @@ userSchema.pre('save', async function hashPassword() {
     if (user.isModified('password')) {
         user.password = await bcrypt.hash(user.password, 8);
     }
-    console.log('just before saving');
 });
 
 // delete user tasks when user is removed
